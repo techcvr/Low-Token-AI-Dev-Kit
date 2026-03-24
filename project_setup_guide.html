@@ -1,0 +1,1443 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Memory-Driven Premium Development — Project Guide</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&family=Lora:ital,wght@0,400;0,500;1,400&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0d0f14;
+      --surface: #13161e;
+      --surface2: #1a1d27;
+      --border: #232736;
+      --accent: #5b8af5;
+      --accent2: #a78bfa;
+      --accent3: #34d399;
+      --text: #e2e6f0;
+      --muted: #6b7280;
+      --code-bg: #0a0c10;
+      --tag-bg: rgba(91, 138, 245, 0.12);
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Lora', Georgia, serif;
+      font-size: 16px;
+      line-height: 1.75;
+      min-height: 100vh;
+    }
+
+    /* Noise texture overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      min-height: 100vh;
+      position: relative;
+      z-index: 1;
+      min-width: 0;
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      padding: 2rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .sidebar-logo {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1rem;
+      color: var(--accent);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sidebar-label {
+      font-family: 'Syne', sans-serif;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-top: 1.2rem;
+      margin-bottom: 0.3rem;
+      padding-left: 0.75rem;
+    }
+
+    .sidebar a {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-family: 'Syne', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-decoration: none;
+      padding: 0.45rem 0.75rem;
+      border-radius: 6px;
+      transition: all 0.15s ease;
+    }
+
+    .sidebar a:hover,
+    .sidebar a.active {
+      color: var(--text);
+      background: var(--surface2);
+    }
+
+    .sidebar a.active {
+      color: var(--accent);
+    }
+
+    .sidebar a .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--border);
+      flex-shrink: 0;
+      transition: background 0.15s;
+    }
+
+    .sidebar a.active .dot {
+      background: var(--accent);
+    }
+
+    /* ── Main ── */
+    main {
+      padding: 3.5rem 4rem 6rem;
+      min-width: 0;
+      overflow-x: hidden;
+    }
+
+    /* ── Hero ── */
+    .hero {
+      margin-bottom: 4rem;
+      padding-bottom: 3rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: var(--accent);
+      background: var(--tag-bg);
+      border: 1px solid rgba(91, 138, 245, 0.25);
+      padding: 0.3rem 0.8rem;
+      border-radius: 100px;
+      margin-bottom: 1.5rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .hero h1 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 2.8rem;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      color: #fff;
+      margin-bottom: 1.2rem;
+    }
+
+    .hero h1 span {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero p {
+      font-size: 1.05rem;
+      color: #9aa3b5;
+      max-width: 560px;
+      line-height: 1.8;
+    }
+
+    /* ── Sections ── */
+    .section {
+      margin-bottom: 3.5rem;
+      scroll-margin-top: 2rem;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      font-weight: 500;
+      padding: 0.25rem 0.65rem;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      flex-shrink: 0;
+    }
+
+    .badge-phase {
+      background: rgba(52, 211, 153, 0.15);
+      color: var(--accent3);
+      border: 1px solid rgba(52, 211, 153, 0.3);
+    }
+
+    .badge-option {
+      background: rgba(167, 139, 250, 0.15);
+      color: var(--accent2);
+      border: 1px solid rgba(167, 139, 250, 0.3);
+    }
+
+    .badge-new {
+      background: rgba(251, 191, 36, 0.15);
+      color: #fbbf24;
+      border: 1px solid rgba(251, 191, 36, 0.3);
+    }
+
+    .badge-tip {
+      background: rgba(91, 138, 245, 0.15);
+      color: var(--accent);
+      border: 1px solid rgba(91, 138, 245, 0.3);
+    }
+
+    .section h2 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 1.4rem;
+      color: #fff;
+      letter-spacing: -0.01em;
+    }
+
+    .section h3 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 600;
+      font-size: 1rem;
+      color: var(--text);
+      margin: 1.5rem 0 0.75rem;
+    }
+
+    .section p {
+      color: #9aa3b5;
+      margin-bottom: 1rem;
+    }
+
+    /* ── File list ── */
+    .file-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      margin: 1rem 0;
+    }
+
+    .file-item {
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.9rem 1.1rem;
+      transition: border-color 0.15s;
+    }
+
+    .file-item:hover {
+      border-color: rgba(91, 138, 245, 0.4);
+    }
+
+    .file-icon {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--accent);
+      background: var(--tag-bg);
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .file-item strong {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      color: var(--text);
+      font-weight: 500;
+      display: block;
+      margin-bottom: 0.15rem;
+    }
+
+    .file-item span {
+      font-size: 0.88rem;
+      color: var(--muted);
+    }
+
+    /* ── Code block ── */
+    .code-block {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      margin: 1.2rem 0;
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      display: block;
+      box-sizing: border-box;
+    }
+
+    .code-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.7rem 1.1rem;
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+      width: 100%;
+    }
+
+    .code-header span {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .code-dots {
+      display: flex;
+      gap: 5px;
+    }
+
+    .code-dots i {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+    }
+
+    .code-dots i:nth-child(1) {
+      background: #ff5f57;
+    }
+
+    .code-dots i:nth-child(2) {
+      background: #febc2e;
+    }
+
+    .code-dots i:nth-child(3) {
+      background: #28c840;
+    }
+
+    .code-block pre {
+      padding: 1.2rem 1.3rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
+      line-height: 1.75;
+      color: #c9d1e0;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      display: block;
+      box-sizing: border-box;
+    }
+
+    .code-block pre .hl {
+      color: var(--accent);
+    }
+
+    .code-block pre .hl2 {
+      color: var(--accent2);
+    }
+
+    .code-block pre .hl3 {
+      color: var(--accent3);
+    }
+
+    .code-block pre .comment {
+      color: #4b5563;
+      font-style: italic;
+    }
+
+    .code-block pre .num {
+      color: #fbbf24;
+    }
+
+    /* ── Copy button ── */
+    .copy-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      font-weight: 500;
+      color: var(--muted);
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      padding: 0.25rem 0.6rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      letter-spacing: 0.04em;
+    }
+
+    .copy-btn:hover {
+      color: var(--text);
+      border-color: rgba(91, 138, 245, 0.4);
+      background: rgba(91, 138, 245, 0.08);
+    }
+
+    .copy-btn.copied {
+      color: var(--accent3);
+      border-color: rgba(52, 211, 153, 0.4);
+      background: rgba(52, 211, 153, 0.08);
+    }
+
+    .copy-btn svg {
+      flex-shrink: 0;
+    }
+
+    /* ── Step ── */
+    .steps {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      margin: 1rem 0;
+    }
+
+    .step {
+      display: grid;
+      grid-template-columns: 40px 1fr;
+      gap: 1rem;
+      position: relative;
+    }
+
+    .step:not(:last-child)::before {
+      content: '';
+      position: absolute;
+      left: 19px;
+      top: 40px;
+      bottom: -8px;
+      width: 2px;
+      background: var(--border);
+    }
+
+    .step-num {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: var(--surface2);
+      border: 2px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 0.85rem;
+      color: var(--accent);
+      flex-shrink: 0;
+      position: relative;
+      z-index: 1;
+    }
+
+    .step-body {
+      padding: 0.4rem 0 1.5rem;
+    }
+
+    .step-body h4 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: var(--text);
+      margin-bottom: 0.4rem;
+    }
+
+    .step-body p {
+      font-size: 0.9rem;
+      color: var(--muted);
+      margin-bottom: 0;
+    }
+
+    /* ── Rules table ── */
+    .rules-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin: 1rem 0;
+    }
+
+    .rule-row {
+      display: grid;
+      grid-template-columns: 200px 1fr;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      transition: border-color 0.15s;
+    }
+
+    .rule-row:hover {
+      border-color: rgba(91, 138, 245, 0.35);
+    }
+
+    .rule-label {
+      background: var(--surface2);
+      padding: 0.85rem 1rem;
+      font-family: 'Syne', sans-serif;
+      font-weight: 600;
+      font-size: 0.8rem;
+      color: var(--accent);
+      border-right: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+    }
+
+    .rule-desc {
+      padding: 0.85rem 1.1rem;
+      font-size: 0.88rem;
+      color: #9aa3b5;
+      display: flex;
+      align-items: center;
+    }
+
+    /* ── Tips ── */
+    .tips-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      margin: 1rem 0;
+    }
+
+    .tip-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      border-radius: 0 8px 8px 0;
+      padding: 1rem 1.2rem;
+      transition: border-color 0.15s, background 0.15s;
+    }
+
+    .tip-card:hover {
+      background: var(--surface2);
+      border-left-color: var(--accent2);
+    }
+
+    .tip-card strong {
+      display: block;
+      font-family: 'Syne', sans-serif;
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 0.3rem;
+    }
+
+    .tip-card p {
+      font-size: 0.88rem;
+      color: var(--muted);
+      margin: 0;
+      line-height: 1.6;
+    }
+
+    /* ── Highlight box ── */
+    .callout {
+      background: rgba(91, 138, 245, 0.07);
+      border: 1px solid rgba(91, 138, 245, 0.25);
+      border-radius: 10px;
+      padding: 1.2rem 1.4rem;
+      margin: 1.2rem 0;
+      font-size: 0.92rem;
+      color: #b0bdd4;
+      line-height: 1.7;
+    }
+
+    .callout strong {
+      color: var(--accent);
+    }
+
+    /* ── Resume steps ── */
+    .resume-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      margin: 1.2rem 0 1.8rem;
+    }
+
+    .resume-step {
+      display: grid;
+      grid-template-columns: 44px 1fr;
+      gap: 1.1rem;
+      position: relative;
+    }
+
+    .resume-step:not(:last-child)::before {
+      content: '';
+      position: absolute;
+      left: 21px;
+      top: 44px;
+      bottom: -8px;
+      width: 2px;
+      background: linear-gradient(to bottom, rgba(91, 138, 245, 0.4), transparent);
+    }
+
+    .resume-step-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 0.9rem;
+      color: white;
+      flex-shrink: 0;
+      position: relative;
+      z-index: 1;
+      box-shadow: 0 0 16px rgba(91, 138, 245, 0.35);
+    }
+
+    .resume-step-content {
+      padding: 0.5rem 0 1.8rem;
+    }
+
+    .resume-step-content h4 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--text);
+      margin-bottom: 0.4rem;
+    }
+
+    .resume-step-content p {
+      font-size: 0.9rem;
+      color: var(--muted);
+      margin-bottom: 0;
+      line-height: 1.65;
+    }
+
+    /* ── Why grid ── */
+    .why-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin: 1rem 0;
+    }
+
+    .why-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.3rem 1.2rem;
+      transition: border-color 0.15s, transform 0.15s;
+    }
+
+    .why-card:hover {
+      border-color: rgba(91, 138, 245, 0.35);
+      transform: translateY(-2px);
+    }
+
+    .why-icon {
+      font-size: 1.4rem;
+      margin-bottom: 0.6rem;
+      display: block;
+    }
+
+    .why-card strong {
+      display: block;
+      font-family: 'Syne', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 0.5rem;
+    }
+
+    .why-card p {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin: 0;
+      line-height: 1.6;
+    }
+
+    /* ── Resume section ── */
+    .resume-section {
+      background: linear-gradient(135deg, rgba(91, 138, 245, 0.06), rgba(167, 139, 250, 0.06));
+      border: 1px solid rgba(167, 139, 250, 0.2);
+      border-radius: 14px;
+      padding: 2rem;
+      margin-bottom: 3.5rem;
+    }
+
+    .model-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.2rem 1.4rem;
+      margin-top: 1rem;
+    }
+
+    .model-card h4 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--accent2);
+      margin-bottom: 0.6rem;
+    }
+
+    .model-card p {
+      font-size: 0.88rem;
+      color: var(--muted);
+      margin: 0;
+      line-height: 1.65;
+    }
+
+    .summary-steps {
+      display: flex;
+      gap: 0.6rem;
+      margin-top: 1.2rem;
+      flex-wrap: wrap;
+    }
+
+    .summary-step {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      padding: 0.4rem 0.9rem;
+      font-family: 'Syne', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .summary-step .n {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: white;
+      font-size: 0.7rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* ── Divider ── */
+    .divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 3rem 0;
+    }
+
+    /* ── Inline code ── */
+    code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82em;
+      background: var(--tag-bg);
+      color: var(--accent);
+      padding: 0.15em 0.4em;
+      border-radius: 4px;
+      border: 1px solid rgba(91, 138, 245, 0.2);
+    }
+
+    /* ── Scroll behavior ── */
+    html {
+      scroll-behavior: smooth;
+    }
+
+    /* ── Animations ── */
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(16px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .hero {
+      animation: fadeUp 0.5s ease both;
+    }
+
+    .section {
+      animation: fadeUp 0.5s ease both;
+    }
+
+    .section:nth-child(2) {
+      animation-delay: 0.05s;
+    }
+
+    .section:nth-child(3) {
+      animation-delay: 0.1s;
+    }
+
+    .section:nth-child(4) {
+      animation-delay: 0.15s;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="layout">
+
+    <!-- Sidebar -->
+    <nav class="sidebar">
+      <div class="sidebar-logo">✦ Dev Guide</div>
+
+      <div class="sidebar-label">Setup</div>
+      <a href="#setup" class="active"><span class="dot"></span>Directory Setup</a>
+
+      <div class="sidebar-label">Bootstrapping</div>
+      <a href="#option1"><span class="dot"></span>Option 1 — Autonomous</a>
+      <a href="#option2"><span class="dot"></span>Option 2 — Plan-First</a>
+
+      <div class="sidebar-label">Rules & Memory</div>
+      <a href="#FileStructure"><span class="dot"></span>Memory File Structure</a>
+
+      <div class="sidebar-label">Workflow</div>
+      <a href="#resume"><span class="dot"></span>Resuming a Project ✦</a>
+      <a href="#newfeature"><span class="dot"></span>Adding a New Feature</a>
+      <a href="#closing"><span class="dot"></span>Closing Ritual</a>
+    </nav>
+
+    <!-- Main Content -->
+    <main>
+
+      <!-- Hero -->
+      <div class="hero">
+        <div class="hero-eyebrow">✦ Documentation</div>
+        <h1>Memory-Driven<br><span>Premium Development</span></h1>
+        <p>A complete guide for bootstrapping new projects with senior-level structure, premium UI aesthetics, and an
+          efficient AI memory system.</p>
+      </div>
+
+      <!-- Phase 1 -->
+      <div class="section" id="setup">
+        <div class="section-header">
+          <span class="badge badge-phase">Setup</span>
+          <h2>Initial Directory Setup</h2>
+        </div>
+        <p>Before inviting an AI agent into the codebase, manually create the project skeleton to establish the right
+          structure from the start.</p>
+
+        <h3>Root Files to Create</h3>
+        <div class="file-list">
+          <div class="file-item">
+            <span class="file-icon">md</span>
+            <div><strong>CLAUDE.md</strong><span>The routing map for Claude / Claude Code — auto-loaded on every
+                session. Points to the <code>.memory/</code> directory.</span></div>
+          </div>
+          <div class="file-item">
+            <span class="file-icon">md</span>
+            <div><strong>GEMINI.md</strong><span>The routing map for Gemini CLI / Antigravity — auto-loaded by Gemini on
+                startup. Same content as CLAUDE.md, both point to the same <code>.memory/</code> folder. Keep both in
+                sync.</span></div>
+          </div>
+          <div class="file-item">
+            <span class="file-icon">txt</span>
+            <div><strong>.cursorrules / .agentrules</strong><span>Optional rules file for Cursor users or generic agent
+                setups.</span></div>
+          </div>
+          <div class="file-item">
+            <span class="file-icon">cfg</span>
+            <div><strong>.gitattributes</strong><span>Configured early to exclude memory files from exports and
+                diffs.</span></div>
+          </div>
+        </div>
+        <div class="callout" style="margin-top:0.8rem;">
+          <strong>Multi-model tip:</strong> <code>CLAUDE.md</code> and <code>GEMINI.md</code> are model-specific entry
+          points — but they both route to the same <code>.memory/</code> folder. This means you can switch between
+          Claude Opus for reasoning and Gemini Flash for execution, and both will always share the same Source of Truth.
+        </div>
+
+        <h3>Initialize the <code>.memory/</code> Directory</h3>
+        <div class="file-list">
+          <div class="file-item">
+            <span class="file-icon">md</span>
+            <div><strong>architecture.md</strong><span>Stack decisions, system design, API contracts.</span></div>
+          </div>
+          <div class="file-item">
+            <span class="file-icon">md</span>
+            <div><strong>ui-design.md</strong><span>Design tokens, colors, spacing, and typography — single source of
+                truth.</span></div>
+          </div>
+          <div class="file-item">
+            <span class="file-icon">md</span>
+            <div><strong>patterns.md</strong><span>Coding standards, naming conventions, and file structure
+                rules.</span></div>
+          </div>
+          <div class="file-item">
+            <span class="file-icon">md</span>
+            <div><strong>logic.md</strong><span>Core business logic, algorithms, and data flow.</span></div>
+          </div>
+          <div class="file-item">
+            <span class="file-icon">md</span>
+            <div><strong>assets.md</strong><span>Images, icons, fonts, and static resource references.</span></div>
+          </div>
+          <div class="file-item">
+            <span class="file-icon">md</span>
+            <div><strong>context.md</strong><span>Who this is for, what problem it solves, and what success looks
+                like.</span></div>
+          </div>
+          <div class="file-item">
+            <span class="file-icon">md</span>
+            <div><strong>decisions.md</strong><span>Decisions made and rejected approaches — with reasoning and
+                conditions to revisit.</span></div>
+          </div>
+          <div class="file-item">
+            <span class="file-icon">md</span>
+            <div><strong>errors.md</strong><span>Bugs hit, root cause, and fix applied — prevents the AI repeating the
+                same debugging paths.</span></div>
+          </div>
+          <div class="file-item">
+            <span class="file-icon">md</span>
+            <div><strong>env.md</strong><span>PHP version, WP version, hosting quirks, and environment-specific
+                constraints.</span></div>
+          </div>
+          <div class="file-item">
+            <span class="file-icon">md</span>
+            <div><strong>todo.md</strong><span>Active task, up next, and completed — the AI's precise re-entry point
+                each session.</span></div>
+          </div>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <!-- Option 1 -->
+      <div class="section" id="option1">
+        <div class="section-header">
+          <span class="badge badge-option">Option 1</span>
+          <h2>Autonomous Master Bootstrap</h2>
+        </div>
+        <p>Use this approach when you want a single prompt to handle the complete setup in one go. Send this as the
+          <strong>very first message</strong> in a blank directory.
+        </p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <div class="code-dots"><i></i><i></i><i></i></div>
+            <span>Bootstrap Prompt</span>
+            <button class="copy-btn" onclick="copyCode(this)">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" />
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+              </svg>
+              Copy
+            </button>
+          </div>
+          <pre>I am initiating a new project: <span class="hl">[Project Name]</span>.
+<span class="comment"># Goal: [Briefly describe the goal]</span>
+<span class="comment"># Tech Stack: [e.g., Next.js, Tailwind, TypeScript]</span>
+
+Task: Perform a complete project bootstrap with a <span class="hl2">Senior Developer</span> structure and <span class="hl2">Premium UI Designer</span> aesthetics. You are to build the codebase autonomously following these rules:
+
+  <span class="num">1.</span> <span class="hl3">Establish Memory Core</span> — Create .memory/ with architecture.md, ui-design.md, and patterns.md. Update root CLAUDE.md.
+
+  <span class="num">2.</span> <span class="hl3">Senior Infrastructure</span> — Initialize project, set up clean folder layers, and strict linting/typing.
+
+  <span class="num">3.</span> <span class="hl3">Premium UI Foundation</span> — Implement design tokens and a basic component library.
+
+Action: Begin by creating the memory structure, then initialize the foundation.</pre>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <!-- Option 2 -->
+      <div class="section" id="option2">
+        <div class="section-header">
+          <span class="badge badge-option">Option 2</span>
+          <h2>Plan-First Workflow <em style="font-size:0.8rem; color: var(--accent2); font-style:normal;">(Highly
+              Recommended)</em></h2>
+        </div>
+        <p>This method ensures the AI understands <strong>requirements</strong> before building
+          <strong>infrastructure</strong>. It produces better-aligned projects and catches assumptions early.
+        </p>
+
+        <div class="steps">
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-body">
+              <h4>The Planning Prompt</h4>
+              <p>In a blank folder, ask the AI to act as a Senior Product Manager and Technical Architect before writing
+                any code.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-body">
+              <h4>The Infrastructure Request</h4>
+              <p>Once you approve the plan, trigger memory creation and codebase scaffolding.</p>
+            </div>
+          </div>
+        </div>
+
+        <h3>Step 1 — Planning Prompt</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <div class="code-dots"><i></i><i></i><i></i></div>
+            <span>Prompt</span>
+            <button class="copy-btn" onclick="copyCode(this)">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" />
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+              </svg>
+              Copy
+            </button>
+          </div>
+          <pre>I want to build <span class="hl">[Project Name]</span>. The goal is to <span class="hl">[Goal Details]</span>.
+
+Before we build any files, please act as a <span class="hl2">Senior Product Manager</span> and <span class="hl2">Technical Architect</span>. Provide a detailed Project Plan including:
+
+  <span class="num">1.</span> Feature Roadmap.
+  <span class="num">2.</span> Proposed Technical Stack (optimized for performance).
+  <span class="num">3.</span> Folder Structure.
+  <span class="num">4.</span> UI/UX Design Philosophy.</pre>
+        </div>
+
+        <h3>Step 2 — Infrastructure Request</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <div class="code-dots"><i></i><i></i><i></i></div>
+            <span>Prompt</span>
+            <button class="copy-btn" onclick="copyCode(this)">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" />
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+              </svg>
+              Copy
+            </button>
+          </div>
+          <pre>This plan looks excellent. Now, please act as a <span class="hl2">Lead Engineer</span> and <span class="hl2">Senior Designer</span> to initialize the project infrastructure.
+
+Task:
+  <span class="num">1.</span> <span class="hl3">Create the Memory Core</span> — Based on our approved plan, create the .memory/ directory and populate these focused, fragmented files:
+
+     - architecture.md  → Stack decisions, system design, API contracts
+     - ui-design.md     → Design tokens, colors, spacing, typography
+     - patterns.md      → Coding standards, naming conventions, file structure
+     - logic.md         → Core business logic, algorithms, data flow
+     - assets.md        → Images, icons, fonts, and static resource references
+     - context.md       → Who this is for, the problem it solves, success criteria
+     - decisions.md     → Decisions made + rejected approaches with reasoning
+     - errors.md        → Bugs hit, root cause, fix applied
+     - env.md           → Runtime versions, hosting quirks, environment constraints
+     - todo.md          → Active task, up next, completed (see Task 6)
+
+     Keep each file small and focused. The AI should only need to load 1-2 files per task — never the entire .memory/ directory.
+
+  <span class="num">2.</span> <span class="hl3">Configure Routing</span> — Create both CLAUDE.md and GEMINI.md in the project root as lightweight indexes: map each knowledge area to its .memory/ file so any AI (Claude or Gemini) knows exactly which file to read for any given task. Both files should have identical content — they are model-specific entry points to the same .memory/ folder.
+
+  <span class="num">3.</span> <span class="hl3">Bootstrap</span> — Initialize the codebase and create the baseline folder structure aligned with architecture.md.
+
+  <span class="num">4.</span> <span class="hl3">Design Tokens</span> — Implement primary CSS/Theme variables in the design system file, sourced from ui-design.md as the single source of truth. Never use inline styles.
+
+  <span class="num">5.</span> <span class="hl3">Enforce Memory Rules</span> — Add the following rules to .memory/architecture.md:
+
+     - Rule 1: Whenever a significant architectural decision is made, update .memory/architecture.md immediately.
+     - Rule 2: New feature patterns (e.g., how modals work) must be documented in .memory/patterns.md.
+     - Rule 3: Never write inline styles. Always use the variables defined in .memory/ui-design.md.
+     - Rule 4: Before reading .memory/, check CLAUDE.md first to load only the relevant file for the current task — not the full directory.
+     - Rule 5: Log every significant bug and its fix to .memory/errors.md to prevent repeating the same debugging paths in future sessions.
+     - Rule 6: Log every key decision AND every rejected approach to .memory/decisions.md with a reason and condition to revisit.
+     - Rule 7: If a task requires deep architectural reasoning, complex refactoring, system-wide decisions, or debugging with no obvious root cause — stop and output: "⚠️ This task needs deeper reasoning. Consider switching to a more capable model (Opus / Gemini Pro) for this prompt, then return to Flash once the decision is made and logged to decisions.md." Do not guess or proceed with low confidence. Flag and wait.
+     - Rule 8: Trigger Rule 7 specifically when: (a) unsure which of two architectural approaches is correct, (b) a bug has no obvious root cause after one attempt, (c) a new feature would affect more than 3 existing files, or (d) about to make a decision not covered in decisions.md.
+
+  <span class="num">6.</span> <span class="hl3">Create Task Tracker</span> — Create .memory/todo.md with this structure:
+
+     ## Active Task
+     - [ ] (What you are working on RIGHT NOW — one task only)
+
+     ## Up Next
+     - [ ] (The next task after the active one)
+     - [ ] (Queued tasks in priority order)
+
+     ## Completed
+     - [x] (Finished tasks — moved here when done)
+
+     Rules for todo.md:
+     - Rule 1: Before starting any new task, update "Active Task" to reflect exactly what is being worked on.
+     - Rule 2: When a task is complete, move it to "Completed" and promote the next item to "Active Task".
+     - Rule 3: Keep "Active Task" to ONE item only. This is the AI's precise re-entry point when resuming a session.
+     - Rule 4: Be specific — instead of "work on calculator", write "add FD Calculator logic in includes/fd-calculator.php starting at the calculateMaturity() function."
+
+  <span class="num">7.</span> <span class="hl3">Seed decisions.md</span> — Based on the approved plan, pre-populate .memory/decisions.md with our initial tech stack choices:
+
+     ## Decisions Made
+     - [date] [Decision] → [Reason]
+
+     ## Rejected Approaches
+     - [date] [Rejected option] → [Why rejected] — revisit if [condition]</pre>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <!-- Memory File Structure -->
+      <div class="section" id="FileStructure">
+        <div class="section-header">
+          <span class="badge badge-phase">Reference</span>
+          <h2>Memory File Structure</h2>
+        </div>
+        <p>Each file in <code>.memory/</code> has a single responsibility. <code>CLAUDE.md</code> and
+          <code>GEMINI.md</code> at the root act as lightweight indexes — the AI checks whichever matches its platform
+          first, then loads only the 1–2 files relevant to the current task. Both files point to the same
+          <code>.memory/</code> folder, so Claude and Gemini always share the same Source of Truth.
+        </p>
+
+        <div class="rules-grid">
+          <div class="rule-row">
+            <div class="rule-label">architecture.md</div>
+            <div class="rule-desc">Stack decisions, system design, API contracts, and memory enforcement rules.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-label">ui-design.md</div>
+            <div class="rule-desc">Design tokens, colors, spacing, typography — the single source of truth for all
+              styles.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-label">patterns.md</div>
+            <div class="rule-desc">Coding standards, naming conventions, and file structure rules.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-label">logic.md</div>
+            <div class="rule-desc">Core business logic, algorithms, and data flow.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-label">assets.md</div>
+            <div class="rule-desc">Images, icons, fonts, and static resource references.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-label">context.md</div>
+            <div class="rule-desc">Who this is for, the problem it solves, and what success looks like.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-label">decisions.md</div>
+            <div class="rule-desc">Decisions made + rejected approaches with reasoning — prevents re-litigating old
+              ground.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-label">errors.md</div>
+            <div class="rule-desc">Bugs hit, root cause, and fix applied — stops the AI repeating the same debugging
+              paths.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-label">env.md</div>
+            <div class="rule-desc">Runtime versions, hosting quirks, and environment-specific constraints.</div>
+          </div>
+          <div class="rule-row">
+            <div class="rule-label">todo.md</div>
+            <div class="rule-desc">Active task (one only), up next queue, and completed — the AI's precise re-entry
+              point.</div>
+          </div>
+        </div>
+
+        <div class="callout" style="margin-top: 1.2rem;">
+          <strong>Token efficiency rule:</strong> Add <code>.memory/</code> to <code>.gitattributes</code> to exclude it
+          from diffs and exports. Add <code>node_modules</code> and large binaries to <code>.gitignore</code> early —
+          preventing the AI from indexing them keeps the context window clean.
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <!-- Resuming a Project -->
+      <div class="section resume-section" id="resume">
+        <div class="section-header">
+          <span class="badge badge-option">Workflow</span>
+          <h2>Resuming an Existing Project with AI</h2>
+        </div>
+        <p>That is the exact superpower of this system. Because AI models strictly follow a <strong>"Stateless"
+            architecture</strong> — each new chat starts with zero knowledge of the previous one — the
+          <code>.memory/</code> folder acts as the <strong>External Hard Drive</strong> for the AI's brain.
+        </p>
+
+        <h3>Here is how it works when you return to a project:</h3>
+
+        <div class="resume-steps">
+
+          <div class="resume-step">
+            <div class="resume-step-icon">1</div>
+            <div class="resume-step-content">
+              <h4>The Persistence</h4>
+              <p>When you close your IDE or terminal, the conversation history is gone — but
+                <code>.memory/architecture.md</code> and <code>.memory/patterns.md</code> stay in your folder. They
+                contain your <strong>Source of Truth</strong>.
+              </p>
+            </div>
+          </div>
+
+          <div class="resume-step">
+            <div class="resume-step-icon">2</div>
+            <div class="resume-step-content">
+              <h4>The Re-Initialization</h4>
+              <p>When you open the project 2 weeks later and type <code>gemini</code> (or open the CLI), the AI doesn't
+                know what you were doing — until it reads those files.</p>
+            </div>
+          </div>
+
+          <div class="resume-step">
+            <div class="resume-step-icon">3</div>
+            <div class="resume-step-content">
+              <h4>The "Resume" Prompt</h4>
+              <p>To get the AI perfectly back in sync, start your first message like this:</p>
+              <div class="code-block" style="margin-top:0.75rem;">
+                <div class="code-header">
+                  <div class="code-dots"><i></i><i></i><i></i></div>
+                  <span>Resume Prompt</span>
+                  <button class="copy-btn" onclick="copyCode(this)">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="9" y="9" width="13" height="13" rx="2" />
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                    </svg>
+                    Copy
+                  </button>
+                </div>
+                <pre>I'm back. Please read <span class="hl">CLAUDE.md</span> and the <span class="hl">.memory/</span> directory to understand the current project state, the architecture decisions we made, and our pending tasks. Once you have the context, summarize what we were working on and suggest the next logical step.</pre>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <h3>Why this is better than "Standard" AI chat</h3>
+
+        <div class="why-grid">
+          <div class="why-card">
+            <div class="why-icon">🚫</div>
+            <strong>No Hallucinations</strong>
+            <p>Without <code>.memory/</code>, if you ask "What's next?", the AI might guess or suggest things that don't
+              fit your tech stack. With it, it stays 100% aligned with your previous decisions.</p>
+          </div>
+          <div class="why-card">
+            <div class="why-icon">⚡</div>
+            <strong>Instant Speed</strong>
+            <p>You don't have to re-explain your database schema or your UI naming conventions. The AI picks them up in
+              one <code>read_dir</code> call.</p>
+          </div>
+          <div class="why-card">
+            <div class="why-icon">✅</div>
+            <strong>Task Tracking</strong>
+            <p>If you keep a <code>todo.md</code> inside your <code>.memory/</code> folder, the AI will literally know
+              exactly which line of code you were about to write.</p>
+          </div>
+        </div>
+
+        <div class="callout" style="margin-top:1.5rem;">
+          <strong>Summary:</strong> Your work is never "lost" as long as the <code>.memory/</code> folder is updated
+          before you close the session. It turns the AI from a <em>"temporary assistant"</em> into a <strong>permanent
+            team member who lives in your codebase.</strong>
+        </div>
+
+      </div>
+
+      <hr class="divider">
+
+      <!-- Adding a New Feature -->
+      <div class="section" id="newfeature">
+        <div class="section-header">
+          <span class="badge badge-option">Workflow</span>
+          <h2>Adding a New Feature in an Existing Project</h2>
+        </div>
+        <p>You can just ask directly about the new feature. For example:</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <div class="code-dots"><i></i><i></i><i></i></div>
+            <span>Simple Approach</span>
+            <button class="copy-btn" onclick="copyCode(this)">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" />
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+              </svg>
+              Copy
+            </button>
+          </div>
+          <pre><span class="hl">"Hey, add a new 'FD Calculator' to the plugin."</span></pre>
+        </div>
+
+        <div class="callout">
+          A well-behaved AI assistant will see the <strong>CLAUDE.md</strong> file in the root, read it, follow the
+          routing to <strong>.memory/</strong>, and instantly know your coding standards, where the logic lives, and
+          what patterns to follow — all without you having to explain anything.
+        </div>
+
+        <p>If you want to be extra safe, you can be explicit:</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <div class="code-dots"><i></i><i></i><i></i></div>
+            <span>Safer Approach</span>
+            <button class="copy-btn" onclick="copyCode(this)">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" />
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+              </svg>
+              Copy
+            </button>
+          </div>
+          <pre><span class="hl2">"Check the .memory/ folder and then add a new 'FD Calculator' feature."</span></pre>
+        </div>
+
+        <h3>Using "Flash" Models</h3>
+
+        <div class="model-card">
+          <h4>⚡ This is the secret benefit of this system</h4>
+          <p>Because the context is now small, structured, and "pre-digested" into <code>.md</code> files, a faster and
+            cheaper model like <strong>Gemini 1.5 Flash</strong> will perform as well as — or sometimes better than — a
+            massive model like Pro.</p>
+          <br>
+          <p>It doesn't have to sort through thousands of lines of code to find the "Admin Settings" logic. It just
+            reads <code>.memory/admin.md</code> and knows exactly where to go.</p>
+        </div>
+
+        <h3>Summary for Next Time</h3>
+        <div class="summary-steps">
+          <div class="summary-step"><span class="n">1</span>Switch to your preferred fast model (Flash)</div>
+          <div class="summary-step"><span class="n">2</span>Ask for what you want</div>
+          <div class="summary-step"><span class="n">3</span>Enjoy the speed!</div>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <!-- Closing Ritual -->
+      <div class="section" id="closing">
+        <div class="section-header">
+          <span class="badge badge-tip">Ritual</span>
+          <h2>The Closing Ritual</h2>
+        </div>
+        <p>The biggest risk in this entire system is an outdated <code>.memory/</code>. An outdated <code>todo.md</code>
+          breaks the resume chain. An unlogged bug means the AI will hit it again. This prompt is what keeps the whole
+          system honest — run it before ending every session.</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <div class="code-dots"><i></i><i></i><i></i></div>
+            <span>End of Session Prompt</span>
+            <button class="copy-btn" onclick="copyCode(this)">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" />
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+              </svg>
+              Copy
+            </button>
+          </div>
+          <pre>Session ending. Please do the following before we close:
+
+  <span class="num">1.</span> Update <span class="hl">todo.md</span> — mark the active task with exactly where we stopped, including the file path and function name if mid-code.
+
+  <span class="num">2.</span> Log to <span class="hl">decisions.md</span> — any architectural decisions made this session, and any approaches we considered but rejected (with reason and condition to revisit).
+
+  <span class="num">3.</span> Log to <span class="hl">errors.md</span> — any bugs we hit, the root cause, and how we fixed them.
+
+  <span class="num">4.</span> Flag any other <span class="hl">.memory/</span> files that need updating based on what we built this session.
+
+Then confirm: "Memory updated. Ready to resume."</pre>
+        </div>
+
+        <div class="why-grid" style="margin-top: 1.2rem;">
+          <div class="why-card">
+            <div class="why-icon">📍</div>
+            <strong>Exact Re-entry</strong>
+            <p>Specific file path + function name in todo.md means zero re-orientation time on the next session.</p>
+          </div>
+          <div class="why-card">
+            <div class="why-icon">🧠</div>
+            <strong>No Lost Reasoning</strong>
+            <p>decisions.md captures the "why" behind choices — including dead ends the AI won't re-explore.</p>
+          </div>
+          <div class="why-card">
+            <div class="why-icon">🐛</div>
+            <strong>No Repeated Bugs</strong>
+            <p>errors.md means the AI never wastes tokens re-diagnosing a problem you already solved.</p>
+          </div>
+        </div>
+
+        <div class="callout" style="margin-top: 1.2rem;">
+          <strong>The confirmation line matters.</strong> Asking the AI to respond with <em>"Memory updated. Ready to
+            resume."</em> forces it to actually complete the updates rather than acknowledge them in theory. It's a
+          small but effective forcing function.
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <script>
+    // Copy button logic
+    function copyCode(btn) {
+      const pre = btn.closest('.code-block').querySelector('pre');
+      const text = pre.innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        btn.classList.add('copied');
+        btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Copied!`;
+        setTimeout(() => {
+          btn.classList.remove('copied');
+          btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy`;
+        }, 2000);
+      });
+    }
+
+    // Active sidebar link on scroll
+    const sections = document.querySelectorAll('[id]');
+    const links = document.querySelectorAll('.sidebar a');
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          links.forEach(l => l.classList.remove('active'));
+          const active = document.querySelector(`.sidebar a[href="#${entry.target.id}"]`);
+          if (active) active.classList.add('active');
+        }
+      });
+    }, { threshold: 0.3 });
+
+    sections.forEach(s => observer.observe(s));
+  </script>
+
+</body>
+
+</html>
