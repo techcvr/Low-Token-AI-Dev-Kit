@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./assets/banner.png" alt="Antigravity Claude LowToken Devkit Banner" />
+  <img src="./image.png" alt="Antigravity Claude LowToken Devkit Banner" />
 </p>
 
 <h1 align="center">🚀 Antigravity Claude LowToken Devkit</h1>
